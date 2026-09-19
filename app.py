@@ -38,15 +38,25 @@ tab1, tab2 = st.tabs(["📋 Преглед на најниски цени", "➕
 with tab1:
     st.header("Преглед на најниски цени")
     
-    search_query = st.text_input("Пребарај производ или маркет:", "")
-    categories = ["Сите"] + sorted(df['Категорија'].dropna().unique().tolist()) if not df.empty else ["Сите"]
-    selected_category = st.selectbox("Филтрирај по категорија:", categories)
+    # Филтри во колони за поуреден изглед
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+        search_query = st.text_input("Пребарај производ:", "")
+    with col_f2:
+        categories = ["Сите"] + sorted(df['Категорија'].dropna().unique().tolist()) if not df.empty else ["Сите"]
+        selected_category = st.selectbox("Филтрирај по категорија:", categories)
+    with col_f3:
+        markets_filter = ["Сите"] + MARKETS
+        selected_market_filter = st.selectbox("Филтрирај по маркет:", markets_filter)
     
+    # Примена на филтрите
     filtered_df = df.copy()
     if search_query and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
     if selected_category != "Сите" and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df['Категорија'] == selected_category]
+    if selected_market_filter != "Сите" and not filtered_df.empty:
+        filtered_df = filtered_df[filtered_df['Маркет'] == selected_market_filter]
     
     st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
