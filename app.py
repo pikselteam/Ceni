@@ -6,7 +6,6 @@ import google.generativeai as genai
 import re  # За чистење на текстот од сметката
 
 # --- КОНФИГУРАЦИЈА НА GOOGLE GEMINI ---
-AQ.Ab8RN6IED2bBzsP9jxgJJocOVHNSfDt8gM7MBru5UxZIIm9Xnwoogle.com/app/apikey
 GEMINI_API_KEY = "AQ.Ab8RN6IED2bBzsP9jxgJJoc0VHNSfDt8gM7MBru5UxZIIm9Xnw"  # Замени го ова со твојот вистински клуч!
 
 if GEMINI_API_KEY != "AQ.Ab8RN6IED2bBzsP9jxgJJoc0VHNSfDt8gM7MBru5UxZIIm9Xnw">0:
