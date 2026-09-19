@@ -1,18 +1,15 @@
-import streamlit as st
-import pandas as pd
-import os
-from PIL import Image
-import google.generativeai as genai
-import json
-
 # --- КОНФИГУРАЦИЈА НА GOOGLE GEMINI ---
-GEMINI_API_KEY = "AQ.Ab8RN6IED2bBzsP9jxgJJoc0VHNSfDt8gM7MBru5UxZIIm9Xnw"
+# Клучот се чита безбедно од Streamlit Secrets
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    GEMINI_API_KEY = ""
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
 else:
-    st.error("ГРЕШКА: Не е внесен Google Gemini API клуч во app.py.")
+    st.error("ГРЕШКА: Не е пронајден Google Gemini API клуч во Streamlit Secrets.")
 
 # Име на Excel фајлот
 EXCEL_FILE = "Evidencija_Ceni_Pazaranje-v18.xlsx"
