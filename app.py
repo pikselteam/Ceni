@@ -6,7 +6,7 @@ import os
 CSV_FILE = "Evidencija_Ceni_Pazaranje_Online.csv"
 
 # Листа на маркети за dropdown менито
-MARKETS = ["Пакет", "Јоцо Мес", "Рамстор", "Ramstore" "КАМ", "Веро", "Vero", "Тинекс", "Стокомак", "КИПЕР", "Друг"]
+MARKETS = ["Пакет", "Јоцо Мес", "Рамстор", "Ramstore", "КАМ", "Веро", "Vero", "Тинекс", "Стокомак", "КИПЕР", "Друг"]
 
 st.set_page_config(page_title="Евиденција на Цени и Пазарење", layout="wide")
 
