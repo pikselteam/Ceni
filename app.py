@@ -1,10 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import os
 
 EXCEL_FILE = "Evidencija_Ceni_Pazaranje-v18.xlsx"
-MARKETS = ["Пакет", "Јоцо Мес", "Рамстор", "КАМ", "Веро", "Тинекс", "Стокомак", "КИПЕР", "Друг"]
 
 st.set_page_config(page_title="Евиденција на Цени и Пазарење", layout="wide")
 
