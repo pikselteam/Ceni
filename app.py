@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Име на твојот CSV фајл (смени го името ако е различно)
-CSV_FILE = "Evidencija_Ceni_Pazaranje-v18.csv"
+# Име на твојот CSV фајл
+CSV_FILE = "Evidencija_Ceni_Pazaranje_Online.csv"
 
 st.set_page_config(page_title="Евиденција на Цени и Пазарење", layout="wide")
 
