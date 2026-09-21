@@ -25,10 +25,11 @@ else:
     df = pd.DataFrame(columns=["Категорија", "Производ и грамажа", "Најниска цена (ден.)", "Маркет", "Датум"])
 
 def save_data(dataframe):
-    """Ги зачувува податоците назад во CSV фајлот."""
+    """Ги подредува податоците по азбука и ги зачувува назад во CSV фајлот."""
     try:
-        dataframe.to_csv(CSV_FILE, index=False)
-        st.success("Податоците се успешно зачувани!")
+        dataframe = dataframe.sort_values(by=["Категорија", "Производ и грамажа"], ascending=[True, True])
+        dataframe.to_csv(CSV_FILE, index=False, lineterminator='\n')
+        st.success("Податоците се успешно зачувани и подредени!")
     except Exception as e:
         st.error(f"Грешка при зачувување: {e}")
 
