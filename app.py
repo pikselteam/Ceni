@@ -3,7 +3,7 @@ import csv
 from datetime import datetime
 import streamlit as st
 
-PRICES_FILE = "prices_db.csv"
+PRICES_FILE = "Evidencija_Ceni_Pazaranje_Online.csv"
 RECIPES_FILE = "recipes_db.csv"
 
 # Иницијализација на фајлови
