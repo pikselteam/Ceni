@@ -3,6 +3,7 @@ import csv
 from datetime import datetime
 import streamlit as st
 
+# Тука го ставаме точното име на твојот фајл
 PRICES_FILE = "Evidencija_Ceni_Pazaranje_Online.csv"
 RECIPES_FILE = "recipes_db.csv"
 
@@ -11,12 +12,12 @@ def init_files():
     if not os.path.exists(PRICES_FILE):
         with open(PRICES_FILE, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["Category", "Product", "Price", "Market", "Date", "Notes"])
+            writer.writerow(["Категорија", "Производ и грамажа", "Најниска цена (ден.)", "Маркет", "Датум", "Забелешка"])
             
     if not os.path.exists(RECIPES_FILE):
         with open(RECIPES_FILE, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["Category", "RecipeName", "Ingredients", "Preparation", "Date", "Notes"])
+            writer.writerow(["Категорија", "Назив на рецепт", "Состојки", "Подготовка", "Датум", "Забелешка"])
 
 init_files()
 
@@ -42,8 +43,8 @@ with tab1:
     if prices_data:
         search_query = st.text_input("Пребарај производ:", key="price_search")
         
-        categories = ["Сите"] + sorted(list(set(row["Category"] for row in prices_data)))
-        markets = ["Сите"] + sorted(list(set(row["Market"] for row in prices_data)))
+        categories = ["Сите"] + sorted(list(set(row.get("Категорија", "") for row in prices_data if row.get("Категорија"))))
+        markets = ["Сите"] + sorted(list(set(row.get("Маркет", "") for row in prices_data if row.get("Маркет"))))
         
         col_f1, col_f2 = st.columns(2)
         with col_f1:
@@ -53,11 +54,11 @@ with tab1:
             
         filtered_prices = prices_data
         if search_query:
-            filtered_prices = [r for r in filtered_prices if search_query.lower() in r["Product"].lower()]
+            filtered_prices = [r for r in filtered_prices if search_query.lower() in r.get("Производ и грамажа", "").lower()]
         if selected_cat != "Сите":
-            filtered_prices = [r for r in filtered_prices if r["Category"] == selected_cat]
+            filtered_prices = [r for r in filtered_prices if r.get("Категорија") == selected_cat]
         if selected_mkt != "Сите":
-            filtered_prices = [r for r in filtered_prices if r["Market"] == selected_mkt]
+            filtered_prices = [r for r in filtered_prices if r.get("Маркет") == selected_mkt]
             
         st.dataframe(filtered_prices, use_container_width=True)
     else:
@@ -108,7 +109,7 @@ with tab2:
                 
             with open(PRICES_FILE, mode="w", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["Category", "Product", "Price", "Market", "Date", "Notes"])
+                writer.writerow(["Категорија", "Производ и грамажа", "Најниска цена (ден.)", "Маркет", "Датум", "Забелешка"])
                 writer.writerows(sorted(rows, key=lambda x: (x[0], x[1])))
 
 # 3. ТАБ: ПРЕГЛЕД НА РЕЦЕПТИ (КАРТИЧКИ)
@@ -127,20 +128,20 @@ with tab3:
         
         filtered_recipes = recipes_data
         if rec_search:
-            filtered_recipes = [r for r in filtered_recipes if rec_search.lower() in r["RecipeName"].lower() or rec_search.lower() in r["Ingredients"].lower()]
+            filtered_recipes = [r for r in filtered_recipes if rec_search.lower() in r.get("Назив на рецепт", "").lower() or rec_search.lower() in r.get("Состојки", "").lower()]
             
         for r in filtered_recipes:
             with st.container():
-                st.markdown(f"### 🥗 {r['RecipeName']}")
-                st.write(f"**Категорија:** {r['Category']} | **Датум:** {r['Date']}")
-                if r.get('Notes'):
-                    st.caption(f"Забелешка: {r['Notes']}")
+                st.markdown(f"### 🥗 {r.get('Назив на рецепт', '')}")
+                st.write(f"**Категорија:** {r.get('Категорија', '')} | **Датум:** {r.get('Датум', '')}")
+                if r.get('Забелешка'):
+                    st.caption(f"Забелешка: {r.get('Забелешка')}")
                 
                 st.markdown("**Состојки:**")
-                st.info(r['Ingredients'])
+                st.info(r.get('Состојки', ''))
                 
                 st.markdown("**Подготовка:**")
-                st.write(r['Preparation'])
+                st.write(r.get('Подготовка', ''))
                 st.divider()
     else:
         st.info("Нема зачувани рецепти во базата.")
@@ -162,5 +163,8 @@ with tab4:
             date_str = r_date.strftime("%d.%m.%Y")
             with open(RECIPES_FILE, mode="a", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f)
+                # Ensure header exists for recipes
+                if os.stat(RECIPES_FILE).st_size == 0:
+                     writer.writerow(["Категорија", "Назив на рецепт", "Состојки", "Подготовка", "Датум", "Забелешка"])
                 writer.writerow([r_cat, r_name, r_ingredients, r_prep, date_str, r_notes])
             st.success(f"Рецептот '{r_name}' е успешно зачуван и додаден во вашиот готвач!")
