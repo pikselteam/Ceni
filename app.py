@@ -1,100 +1,170 @@
-import streamlit as st
-import pandas as pd
 import os
+import csv
+from datetime import datetime
+import streamlit as st
 
-# Име на твојот CSV фајл
-CSV_FILE = "Evidencija_Ceni_Pazaranje_Online.csv"
+PRICES_FILE = "prices_db.csv"
+RECIPES_FILE = "recipes_db.csv"
 
-# Листа на маркети за dropdown менито
-MARKETS = ["Пакет", "Јоцо Мес", "Рамстор", "Ramstore", "КАМ", "Веро", "Vero", "Тинекс", "Стокомак", "КИПЕР", "Друг"]
-
-st.set_page_config(page_title="Евиденција на Цени и Пазарење", layout="wide")
-
-st.title("🛒 Евиденција на Цени и Пазарење")
-st.write("Добредојдовте! Вашата лична база за најниски цени.")
-
-# Вчитување на податоци од CSV
-if os.path.exists(CSV_FILE):
-    try:
-        df = pd.read_csv(CSV_FILE)
-        df['Датум'] = pd.to_datetime(df['Датум'], errors='coerce').dt.date
-    except Exception as e:
-        st.error(f"Грешка при читање на CSV фајлот: {e}")
-        df = pd.DataFrame(columns=["Категорија", "Производ и грамажа", "Најниска цена (ден.)", "Маркет", "Датум"])
-else:
-    df = pd.DataFrame(columns=["Категорија", "Производ и грамажа", "Најниска цена (ден.)", "Маркет", "Датум"])
-
-def save_data(dataframe):
-    """Ги подредува податоците по азбука, ги чисти празните полиња и ги зачувува во CSV фајлот."""
-    try:
-        # Автоматско сортирање по Категорија и Производ
-        dataframe = dataframe.sort_values(by=["Категорија", "Производ и грамажа"], ascending=[True, True])
-        
-        # Уредување на колоната за забелешки да биде чиста без None
-        if 'Забелешка' not in dataframe.columns:
-            dataframe['Забелешка'] = ""
-        else:
-            dataframe['Забелешка'] = dataframe['Забелешка'].fillna("")
+# Иницијализација на фајлови
+def init_files():
+    if not os.path.exists(PRICES_FILE):
+        with open(PRICES_FILE, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Category", "Product", "Price", "Market", "Date", "Notes"])
             
-        # Зачувување каде што празните вредности се зачувуваат како празно место (na_rep="")
-        dataframe.to_csv(CSV_FILE, index=False, na_rep="", lineterminator='\n')
-        st.success("Податоците се успешно зачувани и подредени!")
-    except Exception as e:
-        st.error(f"Грешка при зачувување: {e}")
+    if not os.path.exists(RECIPES_FILE):
+        with open(RECIPES_FILE, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Category", "RecipeName", "Ingredients", "Preparation", "Date", "Notes"])
 
-# Табови за навигација
-tab1, tab2 = st.tabs(["📋 Преглед на најниски цени", "➕ Додај производ рачно"])
+init_files()
 
+st.set_page_config(page_title="Евиденција на Цени и Рецепти", page_icon="🛒", layout="wide")
+
+st.title("🛒 Евиденција на Цени и Рецепти")
+st.write("Добредојдовте! Вашата лична база за најниски цени и омилени рецепти.")
+
+# Мени / Табови
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Преглед на најниски цени", "➕ Додај производ", "📖 Преглед на рецепти", "🍳 Додај нов рецепт"])
+
+# 1. ТАБ: ПРЕГЛЕД НА ЦЕНИ
 with tab1:
     st.header("Преглед на најниски цени")
     
-    # Филтри во колони за поуреден изглед
-    col_f1, col_f2, col_f3 = st.columns(3)
-    with col_f1:
-        search_query = st.text_input("Пребарај производ:", "")
-    with col_f2:
-        categories = ["Сите"] + sorted(df['Категорија'].dropna().unique().tolist()) if not df.empty else ["Сите"]
-        selected_category = st.selectbox("Филтрирај по категорија:", categories)
-    with col_f3:
-        markets_filter = ["Сите"] + MARKETS
-        selected_market_filter = st.selectbox("Филтрирај по маркет:", markets_filter)
-    
-    # Примена на филтрите
-    filtered_df = df.copy()
-    if search_query and not filtered_df.empty:
-        filtered_df = filtered_df[filtered_df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
-    if selected_category != "Сите" and not filtered_df.empty:
-        filtered_df = filtered_df[filtered_df['Категорија'] == selected_category]
-    if selected_market_filter != "Сите" and not filtered_df.empty:
-        filtered_df = filtered_df[filtered_df['Маркет'] == selected_market_filter]
-    
-    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-
-with tab2:
-    st.header("Додај нов производ рачно")
-    with st.form("add_product_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            cat_list = categories[1:] if len(categories) > 1 else ["Општо"]
-            new_category = st.selectbox("Категорија:", cat_list)
-            new_product = st.text_input("Производ и грамажа (на пр. Млеко 1л):", "")
-            new_date = st.date_input("Датум на купување:")
-        with col2:
-            new_price = st.number_input("Најниска цена (ден.):", min_value=0.0, format="%.2f")
-            new_market = st.selectbox("Избери маркет:", MARKETS)
+    # Читање цени
+    prices_data = []
+    if os.path.exists(PRICES_FILE):
+        with open(PRICES_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                prices_data.append(row)
+                
+    if prices_data:
+        # Филтри
+        search_query = st.text_input("Пребарај производ:", key="price_search")
+        
+        categories = ["Сите"] + sorted(list(set(row["Category"] for row in prices_data)))
+        markets = ["Сите"] + sorted(list(set(row["Market"] for row in prices_data)))
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            selected_cat = st.selectbox("Филтрирај по категорија:", categories, key="price_cat")
+        with col_f2:
+            selected_mkt = st.selectbox("Филтрирај по маркет:", markets, key="price_mkt")
             
-        submitted = st.form_submit_button("Зачувај во базата")
-        if submitted:
-            if new_product and new_price > 0:
-                new_row = pd.DataFrame({
-                    "Категорија": [new_category],
-                    "Производ и грамажа": [new_product],
-                    "Најниска цена (ден.)": [new_price],
-                    "Маркет": [new_market],
-                    "Датум": [new_date]
-                })
-                df = pd.concat([new_row, df], ignore_index=True)
-                save_data(df)
-                st.rerun()
-            else:
-                st.error("Ве молиме пополнете го името на производот и внесете цена.")
+        filtered_prices = prices_data
+        if search_query:
+            filtered_prices = [r for r in filtered_prices if search_query.lower() in r["Product"].lower()]
+        if selected_cat != "Сите":
+            filtered_prices = [r for r in filtered_prices if r["Category"] == selected_cat]
+        if selected_mkt != "Сите":
+            filtered_prices = [r for r in filtered_prices if r["Market"] == selected_mkt]
+            
+        # Приказ во табела
+        st.dataframe(filtered_prices, use_container_width=True)
+    else:
+        st.info("Нема внесено производи во базата.")
+
+# 2. ТАБ: ДОДАЈ ПРОИЗВОД
+with tab2:
+    st.header("Додај производ рачно")
+    with st.form("add_price_form"):
+        p_cat = st.selectbox("Категорија", ["Деликатес & Паштети", "Замрзнато & Риба", "Здрава храна", "Кафе & Чај", "Леб & Печива", "Млечни производи", "Пијалоци", "Слатки & Грицки", "Хигиена за дом", "Останато"])
+        p_name = st.text_input("Производ и грамажа (на пр. Путер од кикирики 500гр)")
+        p_price = st.number_input("Цена (ден.)", min_value=0.0, format="%.2f")
+        p_market = st.text_input("Маркет (на пр. Ramstore)")
+        p_date = st.date_input("Датум", value=datetime.today())
+        p_notes = st.text_input("Забелешка (опционално)")
+        
+        submit_price = st.form_submit_button("Зачувај производ")
+        
+        if submit_price and p_name and p_market:
+            # Зачувување со логика за најниска цена
+            rows = []
+            updated = False
+            date_str = p_date.strftime("%d.%m.%Y")
+            
+            with open(PRICES_FILE, mode="r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                for row in reader:
+                    if len(row) >= 6:
+                        cat, prod, pr, mkt, dt, nts = row
+                        if prod.strip().lower() == p_name.strip().lower():
+                            updated = True
+                            try:
+                                existing_price = float(pr)
+                                if p_price < existing_price:
+                                    rows.append([p_cat, p_name, str(p_price), p_market, date_str, f"Намалено од {existing_price} ден."])
+                                    st.success(f"Ажурирано! Нова пониска цена за {p_name}: {p_price} ден.")
+                                else:
+                                    rows.append(row)
+                                    st.info(f"Постоечката пониска цена ({existing_price} ден.) останува за {p_name}.")
+                            except ValueError:
+                                rows.append(row)
+                        else:
+                            rows.append(row)
+                            
+            if not updated:
+                rows.append([p_cat, p_name, str(p_price), p_market, date_str, p_notes])
+                st.success(f"Успешно додаден нов производ: {p_name} по цена од {p_price} ден.")
+                
+            with open(PRICES_FILE, mode="w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Category", "Product", "Price", "Market", "Date", "Notes"])
+                writer.writerows(sorted(rows, key=lambda x: (x[0], x[1])))
+
+# 3. ТАБ: ПРЕГЛЕД НА РЕЦЕПТИ (КАРТИЧКИ)
+with tab3:
+    st.header("📖 Преглед на Рецепти")
+    
+    recipes_data = []
+    if os.path.exists(RECIPES_FILE):
+        with open(RECIPES_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                recipes_data.append(row)
+                
+    if recipes_data:
+        rec_search = st.text_input("Пребарај рецепт по назив или состојка:", key="recipe_search")
+        
+        filtered_recipes = recipes_data
+        if rec_search:
+            filtered_recipes = [r for r in filtered_recipes if rec_search.lower() in r["RecipeName"].lower() or rec_search.lower() in r["Ingredients"].lower()]
+            
+        for r in filtered_recipes:
+            with st.container():
+                st.markdown(f"### 🥗 {r['RecipeName']}")
+                st.write(f"**Категорија:** {r['Category']} | **Датум:** {r['Date']}")
+                if r.get('Notes'):
+                    st.caption(f"Забелешка: {r['Notes']}")
+                
+                st.markdown("**Состојки:**")
+                st.info(r['Ingredients'])
+                
+                st.markdown("**Подготовка:**")
+                st.write(r['Preparation'])
+                st.divider()
+    else:
+        st.info("Нема зачувани рецепти во базата.")
+
+# 4. ТАБ: ДОДАЈ НОВ РЕЦЕПТ
+with tab4:
+    st.header("🍳 Додај нов рецепт")
+    with st.add_recipe_form := st.form("add_recipe_form"):
+        r_cat = st.selectbox("Категорија на рецепт", ["Зимница", "Главно јадење", "Десерти", "Појадок & Брзи оброци", "Салати"])
+        r_name = st.text_input("Назив на рецепт (на пр. Домашен пинџур)")
+        r_ingredients = st.text_area("Состојки (на пр. 1 кг црвени пиперки, 500 г домати...)")
+        r_prep = st.text_area("Подготовка / Опис на постапката")
+        r_date = st.date_input("Датум на внес", value=datetime.today(), key="rec_date")
+        r_notes = st.text_input("Забелешка (опционално, на пр. Се служи со топол леб)")
+        
+        submit_recipe = st.form_submit_button("Зачувај рецепт")
+        
+        if submit_recipe and r_name and r_ingredients and r_prep:
+            date_str = r_date.strftime("%d.%m.%Y")
+            with open(RECIPES_FILE, mode="a", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([r_cat, r_name, r_ingredients, r_prep, date_str, r_notes])
+            st.success(f"Рецептот '{r_name' е успешно зачуван и додаден во вашиот готвач!")
