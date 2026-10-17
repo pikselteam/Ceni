@@ -165,7 +165,7 @@ with tab3:
 with tab4:
     st.header("🍳 Додај нов рецепт")
     with st.form("add_recipe_form"):
-        r_cat = st.selectbox("Категорија на рецепт", ["Зимница", "Главно јадење", "Десерти", "Појадок & Брзи оброци", "Супи и чорби", "Салати"])
+        r_cat = st.selectbox("Категорија на рецепт", ["Зимница", "Главно јадење", "Десерти", "Појадок & Брзи оброци", "Салати", "Супи и чорби"])
         r_name = st.text_input("Назив на рецепт (на пр. Домашен пинџур)")
         r_ingredients = st.text_area("Состојки (на пр. 1 кг црвени пиперки, 500 г домати...)")
         r_prep = st.text_area("Подготовка / Опис на постапката")
@@ -175,11 +175,23 @@ with tab4:
         submit_recipe = st.form_submit_button("Зачувај рецепт")
         
         if submit_recipe and r_name and r_ingredients and r_prep:
-            date_str = r_date.strftime("%d.%m.%Y")
-            with open(RECIPES_FILE, mode="a", encoding="utf-8", newline="") as f:
-                writer = csv.writer(f)
-                # Ensure header exists for recipes
-                if os.stat(RECIPES_FILE).st_size == 0:
-                     writer.writerow(["Категорија", "Назив на рецепт", "Состојки", "Подготовка", "Датум", "Забелешка"])
-                writer.writerow([r_cat, r_name, r_ingredients, r_prep, date_str, r_notes])
-            st.success(f"Рецептот '{r_name}' е успешно зачуван и додаден во вашиот готвач!")
+            # Проверка за дупликат
+            recipe_exists = False
+            if os.path.exists(RECIPES_FILE):
+                with open(RECIPES_FILE, mode="r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        if row.get("Назив на рецепт", "").strip().lower() == r_name.strip().lower():
+                            recipe_exists = True
+                            break
+            
+            if recipe_exists:
+                st.warning(f"⚠️ Рецептот со назив '{r_name}' веќе постои во вашиот готвач! Проверете во прегледот или користете друго име.")
+            else:
+                date_str = r_date.strftime("%d.%m.%Y")
+                with open(RECIPES_FILE, mode="a", encoding="utf-8", newline="") as f:
+                    writer = csv.writer(f)
+                    if os.stat(RECIPES_FILE).st_size == 0:
+                         writer.writerow(["Категорија", "Назив на рецепт", "Состојки", "Подготовка", "Датум", "Забелешка"])
+                    writer.writerow([r_cat, r_name, r_ingredients, r_prep, date_str, r_notes])
+                st.success(f"Рецептот '{r_name}' е успешно зачуван и додаден во вашиот готвач!")
