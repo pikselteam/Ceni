@@ -32,7 +32,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Преглед на најниски ц�
 with tab1:
     st.header("Преглед на најниски цени")
     
-    # Читање цени
     prices_data = []
     if os.path.exists(PRICES_FILE):
         with open(PRICES_FILE, mode="r", encoding="utf-8") as f:
@@ -41,7 +40,6 @@ with tab1:
                 prices_data.append(row)
                 
     if prices_data:
-        # Филтри
         search_query = st.text_input("Пребарај производ:", key="price_search")
         
         categories = ["Сите"] + sorted(list(set(row["Category"] for row in prices_data)))
@@ -61,7 +59,6 @@ with tab1:
         if selected_mkt != "Сите":
             filtered_prices = [r for r in filtered_prices if r["Market"] == selected_mkt]
             
-        # Приказ во табела
         st.dataframe(filtered_prices, use_container_width=True)
     else:
         st.info("Нема внесено производи во базата.")
@@ -80,7 +77,6 @@ with tab2:
         submit_price = st.form_submit_button("Зачувај производ")
         
         if submit_price and p_name and p_market:
-            # Зачувување со логика за најниска цена
             rows = []
             updated = False
             date_str = p_date.strftime("%d.%m.%Y")
@@ -152,7 +148,7 @@ with tab3:
 # 4. ТАБ: ДОДАЈ НОВ РЕЦЕПТ
 with tab4:
     st.header("🍳 Додај нов рецепт")
-    with st.add_recipe_form := st.form("add_recipe_form"):
+    with st.form("add_recipe_form"):
         r_cat = st.selectbox("Категорија на рецепт", ["Зимница", "Главно јадење", "Десерти", "Појадок & Брзи оброци", "Салати"])
         r_name = st.text_input("Назив на рецепт (на пр. Домашен пинџур)")
         r_ingredients = st.text_area("Состојки (на пр. 1 кг црвени пиперки, 500 г домати...)")
@@ -167,4 +163,4 @@ with tab4:
             with open(RECIPES_FILE, mode="a", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([r_cat, r_name, r_ingredients, r_prep, date_str, r_notes])
-            st.success(f"Рецептот '{r_name' е успешно зачуван и додаден во вашиот готвач!")
+            st.success(f"Рецептот '{r_name}' е успешно зачуван и додаден во вашиот готвач!")
