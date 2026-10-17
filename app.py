@@ -124,12 +124,27 @@ with tab3:
                 recipes_data.append(row)
                 
     if recipes_data:
-        rec_search = st.text_input("Пребарај рецепт по назив или состојка:", key="recipe_search")
+        # Креираме колони за пребарувачот и филтерот за категорија
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
+            rec_search = st.text_input("Пребарај рецепт по назив или состојка:", key="recipe_search")
+        
+        with col_r2:
+            # Ги земаме сите уникатни категории од базата на рецепти
+            recipe_categories = ["Сите"] + sorted(list(set(row.get("Категорија", "") for row in recipes_data if row.get("Категорија"))))
+            rec_cat_filter = st.selectbox("Филтрирај по категорија:", recipe_categories, key="recipe_cat_filter")
         
         filtered_recipes = recipes_data
+        
+        # Филтрирање по пребарување (назив/состојки)
         if rec_search:
             filtered_recipes = [r for r in filtered_recipes if rec_search.lower() in r.get("Назив на рецепт", "").lower() or rec_search.lower() in r.get("Состојки", "").lower()]
             
+        # Филтрирање по категорија
+        if rec_cat_filter != "Сите":
+            filtered_recipes = [r for r in filtered_recipes if r.get("Категорија") == rec_cat_filter]
+            
+        # Приказ на филтрираните рецепти
         for r in filtered_recipes:
             with st.container():
                 st.markdown(f"### 🥗 {r.get('Назив на рецепт', '')}")
