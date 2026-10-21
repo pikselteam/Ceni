@@ -41,6 +41,8 @@ with tab1:
                 prices_data.append(row)
                 
     if prices_data:
+        prices_data = sorted(prices_data, key=lambda x: (x.get("Категорија", ""), x.get("Производ и грамажа", "")))
+
         search_query = st.text_input("Пребарај производ:", key="price_search")
         
         categories = ["Сите"] + sorted(list(set(row.get("Категорија", "") for row in prices_data if row.get("Категорија"))))
